@@ -34,13 +34,33 @@ final class DefaultMovieListViewModel: MovieListViewModel {
         }
     }
     
+    // Debouncing
+//    private var searchTask: DispatchWorkItem?
+//    func didSearch(query: String) {
+//        searchTask?.cancel()
+//        searchTask = DispatchWorkItem {
+//            self.movieSearchUseCase.didSearch(with: query) { [weak self] result in
+//                DispatchQueue.main.async {
+//                    switch result {
+//                    case .success(let list):
+//                        self?.items.value = list
+//                    case .failure(let err):
+//                        self?.items.send(completion: .failure(err))
+//                    }
+//                }
+//            }
+//        }
+//        DispatchQueue.global().asyncAfter(deadline: .now() + 0.2, execute: searchTask!)
+//    }
     func didSearch(query: String) {
         movieSearchUseCase.didSearch(with: query) { [weak self] result in
-            switch result {
-            case .success(let list):
-                self?.items.value = list
-            case .failure(let err):
-                self?.items.send(completion: .failure(err))
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let list):
+                    self?.items.value = list
+                case .failure(let err):
+                    self?.items.send(completion: .failure(err))
+                }
             }
         }
     }
