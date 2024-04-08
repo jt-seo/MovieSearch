@@ -16,19 +16,10 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        viewModel.items.sink { [weak self] movies in
+        viewModel.items.sink { err in
+            print("error occurred: \(err)")
+        } receiveValue: { [weak self] movieList in
             self?.tableView.reloadData()
-        }.store(in: &cancellables)
-        
-        viewModel.errorPublisher.sink { completion in
-            switch completion {
-            case .finished:
-                print("done")
-            case .failure(let err):
-                print("error occurred: \(err)")
-            }
-        } receiveValue: { _ in
-            
         }.store(in: &cancellables)
 
         // Do any additional setup after loading the view.
