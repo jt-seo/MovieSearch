@@ -6,63 +6,54 @@
 //
 
 import UIKit
+import Combine
 
 class ViewController: UIViewController {
-
+    private var viewModel: MovieListViewModel = DefaultMovieListViewModel(movieSearchUseCase: DefaultMovieSearchUseCase(movieRepository: DefaultMovieRepository()))
     @IBOutlet weak var tableView: UITableView!
     private var trie = Trie()
+    private var cancellables = Set<AnyCancellable>()
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        viewModel.items.sink { [weak self] movies in
+            self?.tableView.reloadData()
+        }.store(in: &cancellables)
+        
+        viewModel.errorPublisher.sink { completion in
+            switch completion {
+            case .finished:
+                print("done")
+            case .failure(let err):
+                print("error occurred: \(err)")
+            }
+        } receiveValue: { _ in
+            
+        }.store(in: &cancellables)
+
         // Do any additional setup after loading the view.
         tableView.dataSource = self
         tableView.delegate = self
-        
-        for word in dataSource {
-            trie.insert(word)
-        }
-        
-        filteredVideos = dataSource
     }
     @IBOutlet weak var textField: UITextField!
-    
-    var dataSource = [
-        "The Shawshank Redemption",
-        "The Godfather",
-        "The Dark Knight",
-        "The Godfather Part II",
-        "12 Angry Men",
-        "Schindler's List",
-        "The Lord of the Rings: The Return of the King",
-        "Pulp Fiction",
-        "The Good, the Bad and the Ugly",
-        "The Lord of the Rings: The Fellowship of the Ring"
-    ]
-    
-    private var filteredVideos = [String]()
     
     let videoUrl = "https://devstreaming-cdn.apple.com/videos/streaming/examples/adv_dv_atmos/main.m3u8"
 
     @IBAction func textFieldDidChange(_ sender: UITextField) {
         guard let text = sender.text else { return }
-        if text.isEmpty {
-            filteredVideos = dataSource
-        } else {
-            filteredVideos = trie.search(prefix: text)
-        }
-        
-        tableView.reloadData()
+        viewModel.didSearch(query: text)
     }
     
 }
 
 extension ViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        filteredVideos.count
+        viewModel.items.value.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = filteredVideos[indexPath.row]
+        cell.textLabel?.text = viewModel.items.value[indexPath.row].title
         return cell
     }
     
