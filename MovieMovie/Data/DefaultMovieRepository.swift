@@ -8,7 +8,7 @@
 import Foundation
 
 struct DefaultMovieRepository: MovieRepository {
-    func fetchList(with word: String, _ completion: (Result<[Movie], any Error>) -> Void) {
+    func fetchList(with word: String, _ completion: (Result<[Movie], Error>) -> Void) {
         var titleList: [String]
         if word.isEmpty {
             titleList = dataSource
